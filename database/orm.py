@@ -51,3 +51,9 @@ def delete_user_report(report_id):
     report = session.get(WeatherReport, report_id)
     session.delete(report)
     session.commit()
+
+# список зарегистрированных пользователей
+def get_all_users():
+    session = Session()
+    users = session.query(User).all()
+    return users
