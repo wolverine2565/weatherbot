@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  bot:
+    container_name: bot
+    build: .
+  db:
+    container_name: db
+    ports:
+      - '1234:5432'
+    environment:
+      - POSTGRES_PASSWORD=admin123
+      - POSTGRES_USER=postgres
+    image: library/postgres:14.11

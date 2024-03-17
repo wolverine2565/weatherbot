@@ -116,7 +116,7 @@ async def get_reports(message: types.Message):
     )
     await message.answer(text, reply_markup=inline_markup)
 
-@dp.callback_query_handler(lambda call: True)
+@dp.callback_query_handler(lambda call: 'users' not in call.data)
 async def callback_query(call, state: FSMContext):
     query_type = call.data.split('_')[0]
     if query_type == 'delete' and call.data.split('_')[1] == 'report':
