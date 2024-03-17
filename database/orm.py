@@ -8,6 +8,7 @@ engine = create_engine(database_config.url, echo=True)
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 
+# регистрация по кнопке /start
 def add_user(tg_id):
     session = Session()
     user = session.query(User).filter(User.tg_id == tg_id).first()
@@ -16,13 +17,14 @@ def add_user(tg_id):
         session.add(new_user)
         session.commit()
 
+# установить город проживания
 def set_user_city(tg_id, city):
     session = Session()
     user = session.query(User).filter(User.tg_id == tg_id).first()
     user.city = city
     session.commit()
 
-
+# создание прогноза
 def create_report(tg_id, temp, feels_like, wind_speed, pressure_mm, city):
     session = Session()
     user = session.query(User).filter(User.tg_id == tg_id).first()
@@ -30,13 +32,22 @@ def create_report(tg_id, temp, feels_like, wind_speed, pressure_mm, city):
     session.add(new_report)
     session.commit()
 
+# город проживания
 def get_user_city(tg_id):
     session = Session()
     user = session.query(User).filter(User.tg_id == tg_id).first()
     return user.city
 
+# получить историю
 def get_reports(tg_id):
     session = Session()
     user = session.query(User).filter(User.tg_id == tg_id).first()
     reports = user.reports
     return reports
+
+# удаление запроса
+def delete_user_report(report_id):
+    session = Session()
+    report = session.get(WeatherReport, report_id)
+    session.delete(report)
+    session.commit()
