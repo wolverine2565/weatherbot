@@ -5,6 +5,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from settings import bot_config
 from api_requests import request
 from database import orm
+import math
 
 
 bot = Bot(token=bot_config.bot_token)
@@ -25,12 +26,24 @@ async def start_message(message: types.Message):
     await message.answer(text, reply_markup=markup)
 
 @dp.message_handler(regexp='Погода в моём городе')
-async def get_user_city_weather(message):
+async def get_user_city_weather(message: types.Message):
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     btn1 = types.KeyboardButton('Меню')
     markup.add(btn1)
-    text = 'Я пока так не умею'
+    city = orm.get_user_city(message.from_user.id)
+    if city is None:
+        text = 'Пожалуйста установите город проживания'
+        markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+        btn1 = types.KeyboardButton('Установить свой город')
+        markup.add(btn1)
+        await message.answer(text, reply_markup=markup)
+        return
+    data = request.get_weather(city)
+    orm.create_report(message.from_user.id, data["temp"], data["feels_like"], data["wind_speed"], data["pressure_mm"], city)
+    text = f'Погода в {city}\nТемпература: {data["temp"]} C\nОщущается как: {data["feels_like"]} C \nСкорость ветра: {data["wind_speed"]}м/с\nДавление: {data["pressure_mm"]}мм'
     await message.answer(text, reply_markup=markup)
+    """переработать данный хендлер чтобы сразу запрашивался город нахождения"""
+
 
 @dp.message_handler(regexp='Погода в другом месте')
 async def city_start(message: types.Message):
@@ -84,6 +97,7 @@ async def user_city_chosen(message: types.Message, state: FSMContext):
     await message.answer(text, reply_markup=markup)
     await state.finish()
 
+
 async def main_menu():
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2)
     btn1 = types.KeyboardButton('Погода в моём городе')
@@ -92,6 +106,25 @@ async def main_menu():
     btn4 = types.KeyboardButton('Установить свой город')
     markup.add(btn1, btn2, btn3, btn4)
     return markup
+
+@dp.message_handler(regexp= 'История')
+async def get_reports(message: types.Message):
+    current_page = 1
+    reports = orm.get_reports(message.from_user.id)
+    total_pages = math.ceil(len(reports) / 4)
+    text = 'История запросов:'
+    inline_markup = types.InlineKeyboardMarkup()
+    for report in reports[:current_page*4]:
+        inline_markup.add(types.InlineKeyboardButton(
+            text=f'{report.city} {report.date.day}.{report.date.month}.{report.date.year}',
+            callback_data=f'report_{report.id}'
+        ))
+    current_page += 1
+    inline_markup.row(
+        types.InlineKeyboardButton(text=f'{current_page-1}/{total_pages}', callback_data='None'),
+        types.InlineKeyboardButton(text='Вперёд', callback_data=f'next_{current_page}')
+    )
+    await message.answer(text, reply_markup=inline_markup)
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)

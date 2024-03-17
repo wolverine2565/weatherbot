@@ -34,3 +34,9 @@ def get_user_city(tg_id):
     session = Session()
     user = session.query(User).filter(User.tg_id == tg_id).first()
     return user.city
+
+def get_reports(tg_id):
+    session = Session()
+    user = session.query(User).filter(User.tg_id == tg_id).first()
+    reports = user.reports
+    return reports
