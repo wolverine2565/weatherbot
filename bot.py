@@ -2,6 +2,7 @@ from aiogram import Bot, Dispatcher, types, executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from settings import bot_config
 from api_requests import request
 from database import orm
@@ -15,12 +16,15 @@ dp = Dispatcher(bot, storage=storage)
 class ChoiceCityWeather(StatesGroup):
     waiting_city = State()
 
+class ChoiceCoordWeather(StatesGroup):
+    waiting_coord = State()
+
 class SetUserCity(StatesGroup):
     waiting_user_city = State()
 
 @dp.message_handler(commands=['start'])
 async def start_message(message: types.Message):
-    orm.add_user(message.from_user.id)
+    orm.add_user(message.from_user.id, message.from_user.username, message.from_user.full_name)
     markup = await main_menu()
     text = f'Привет {message.from_user.first_name}, я бот, который расскжет тебе о погоде на сегодня'
     await message.answer(text, reply_markup=markup)
@@ -44,7 +48,6 @@ async def get_user_city_weather(message: types.Message):
     await message.answer(text, reply_markup=markup)
     """переработать данный хендлер чтобы сразу запрашивался город нахождения"""
 
-
 @dp.message_handler(regexp='Погода в другом месте')
 async def city_start(message: types.Message):
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
@@ -53,6 +56,25 @@ async def city_start(message: types.Message):
     text = 'Введите название города'
     await message.answer(text, reply_markup=markup)
     await ChoiceCityWeather.waiting_city.set()
+
+# Добалена погода по геолокации
+@dp.message_handler(lambda message: "Отправить геолокацию" in message.text)
+async def request_location(message: types.Message):
+    reply_markup = types.ReplyKeyboardRemove()  # Убираем клавиатуру
+    # await message.answer("Теперь отправьте свою геолокацию, нажав на кнопку внизу экрана.", reply_markup=reply_markup)
+    await message.answer("Пожалуйста, поделись своим местоположением 🗺️", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True).add(types.KeyboardButton("Отправить местоположение", request_location=True)))
+
+@dp.message_handler(content_types=types.ContentType.LOCATION)
+async def handle_location(message: types.Message):
+    latitude = message.location.latitude
+    longitude = message.location.longitude
+    data = request.get_weather_coord(latitude, longitude)
+    markup = await main_menu()
+    orm.create_report(message.from_user.id, data['fact']['temp'], data['fact']['feels_like'], data['fact']['wind_speed'], data['fact']['pressure_mm'],
+                      data['geo_object']['locality']['name'])
+    text = f'Погода в {data["geo_object"]["locality"]["name"]}\nТемпература: {data["fact"]["temp"]} C\nОщущается как: {data["fact"]["feels_like"]} C \nСкорость ветра: {data["fact"]["wind_speed"]}м/с\nДавление: {data["fact"]["pressure_mm"]}мм'
+    await message.answer(text, reply_markup=markup)
+
 
 @dp.message_handler(state=ChoiceCityWeather.waiting_city)
 async def city_chosen(message: types.Message, state: FSMContext):
@@ -67,7 +89,7 @@ async def city_chosen(message: types.Message, state: FSMContext):
                       city.get('waiting_city'))
     text = f'Погода в {city.get("waiting_city")}\nТемпература: {data["temp"]} C\nОщущается как: {data["feels_like"]} C \nСкорость ветра: {data["wind_speed"]}м/с\nДавление: {data["pressure_mm"]}мм'
     await message.answer(text, reply_markup=markup)
-    await state.finish()
+
 
 @dp.message_handler(regexp='Меню')
 async def start_message(message: types.Message):
@@ -253,7 +275,12 @@ async def get_all_users(message: types.Message):
     inline_markup = types.InlineKeyboardMarkup()
     for user in users[:current_page*4]:
         inline_markup.add(types.InlineKeyboardButton(
-            text=f'{user.id}) id: {user.tg_id} Подключился: {user.connection_date.day}.{user.connection_date.month}.{user.connection_date.year} Отчётов: {len(user.reports)}',
+            text=f'{user.id}) id: {user.tg_id} '
+                 f'Пользователь: {user.username} '
+                 f'Полное имя: {user.full_name} '
+                 f'Город: {user.city} '
+                 f'Подключился: {user.connection_date.day}.{user.connection_date.month}.{user.connection_date.year} '
+                 f'Отчётов: {len(user.reports)} ',
             callback_data=f'None'
         ))
     current_page += 1
@@ -334,7 +361,8 @@ async def main_menu():
     btn2 = types.KeyboardButton('Погода в другом месте')
     btn3 = types.KeyboardButton('История')
     btn4 = types.KeyboardButton('Установить свой город')
-    markup.add(btn1, btn2, btn3, btn4)
+    btn5 = types.KeyboardButton('Отправить геолокацию')
+    markup.add(btn1, btn2, btn3, btn4, btn5)
     return markup
 
 if __name__ == '__main__':

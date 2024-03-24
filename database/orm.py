@@ -9,11 +9,11 @@ Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 
 # регистрация по кнопке /start
-def add_user(tg_id):
+def add_user(tg_id, username, full_name):
     session = Session()
     user = session.query(User).filter(User.tg_id == tg_id).first()
     if user is None:
-        new_user = User(tg_id=tg_id)
+        new_user = User(tg_id=tg_id, username=username, full_name=full_name)
         session.add(new_user)
         session.commit()
 
