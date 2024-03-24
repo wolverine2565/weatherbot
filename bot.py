@@ -81,15 +81,20 @@ async def city_chosen(message: types.Message, state: FSMContext):
     if message.text[0].islower():
         await message.answer('Названия городов пишутся с большой буквы)')
         return
-    await state.update_data(waiting_city=message.text)
-    markup = await main_menu()
-    city = await state.get_data()
-    data = request.get_weather(city.get('waiting_city'))
-    orm.create_report(message.from_user.id, data["temp"], data["feels_like"], data["wind_speed"], data["pressure_mm"],
+    elif message.text == 'Меню':
+        await start_message(message)
+        await state.reset_state()
+        #выход без сохранения
+    else:
+        await state.update_data(waiting_city=message.text)
+        markup = await main_menu()
+        city = await state.get_data()
+        data = request.get_weather(city.get('waiting_city'))
+        orm.create_report(message.from_user.id, data["temp"], data["feels_like"], data["wind_speed"], data["pressure_mm"],
                       city.get('waiting_city'))
-    text = f'Погода в {city.get("waiting_city")}\nТемпература: {data["temp"]} C\nОщущается как: {data["feels_like"]} C \nСкорость ветра: {data["wind_speed"]}м/с\nДавление: {data["pressure_mm"]}мм'
-    await message.answer(text, reply_markup=markup)
-    await state.finish()
+        text = f'Погода в {city.get("waiting_city")}\nТемпература: {data["temp"]} C\nОщущается как: {data["feels_like"]} C \nСкорость ветра: {data["wind_speed"]}м/с\nДавление: {data["pressure_mm"]}мм'
+        await message.answer(text, reply_markup=markup)
+        await state.finish()
 
 
 @dp.message_handler(regexp='Меню')
@@ -112,13 +117,19 @@ async def user_city_chosen(message: types.Message, state: FSMContext):
     if message.text[0].islower():
         await message.answer('Названия городов пишутся с большой буквы)')
         return
-    await state.update_data(waiting_user_city=message.text)
-    user_data = await state.get_data()
-    orm.set_user_city(message.from_user.id, user_data.get('waiting_user_city'))
-    markup = await main_menu()
-    text = f'Запомнил, {user_data.get("waiting_user_city")} ваш город'
-    await message.answer(text, reply_markup=markup)
-    await state.finish()
+    elif message.text == 'Меню':
+        await start_message(message)
+        await state.reset_state()
+        #выход без сохранения
+    else:
+        await state.update_data(waiting_user_city=message.text)
+        user_data = await state.get_data()
+        orm.set_user_city(message.from_user.id, user_data.get('waiting_user_city'))
+        markup = await main_menu()
+        text = f'Запомнил, {user_data.get("waiting_user_city")} ваш город'
+        await message.answer(text, reply_markup=markup)
+        await state.finish()
+
 
 @dp.message_handler(regexp= 'История')
 async def get_reports(message: types.Message):
@@ -371,10 +382,11 @@ async def get_version(message: types.Message):
     btn1 = types.KeyboardButton('Меню')
     btn2 = types.KeyboardButton('Админ-панель')
     markup.add(btn1, btn2)
-    text =  f'Версия 1.2: ' \
+    text =  f'Версия 1.21: ' \
             f'\n- Исправлены ошибки ' \
             f'\n- Добавлена погода по геолокации' \
-            f'\n- Доработана панель администратора'
+            f'\n- Доработана панель администратора' \
+            f'\n- Исправлена ошибка при которой название кнопки "Меню" сохранялось как новый город'
     await message.answer(text, reply_markup=markup)
 
 @dp.message_handler(lambda message: message.text == 'Настройки')
