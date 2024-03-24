@@ -256,7 +256,7 @@ async def get_all_users(message: types.Message):
             text=f'{user.id}) id: {user.tg_id} '
                  f'Пользователь: {user.username} '
                  f'Полное имя: {user.full_name} '
-                 f'Город: {user.city}'
+                 f'Город: {user.city} '
                  f'Подключился: {user.connection_date.day}.{user.connection_date.month}.{user.connection_date.year} '
                  f'Отчётов: {len(user.reports)} ',
             callback_data=f'None'
