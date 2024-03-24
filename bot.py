@@ -89,6 +89,7 @@ async def city_chosen(message: types.Message, state: FSMContext):
                       city.get('waiting_city'))
     text = f'Погода в {city.get("waiting_city")}\nТемпература: {data["temp"]} C\nОщущается как: {data["feels_like"]} C \nСкорость ветра: {data["wind_speed"]}м/с\nДавление: {data["pressure_mm"]}мм'
     await message.answer(text, reply_markup=markup)
+    await state.finish()
 
 
 @dp.message_handler(regexp='Меню')
@@ -283,11 +284,12 @@ async def get_all_users(message: types.Message):
     inline_markup = types.InlineKeyboardMarkup()
     for user in users[:current_page*4]:
         inline_markup.add(types.InlineKeyboardButton(
-            text=f'{user.id}) id: {user.tg_id} '
-                 f'Пользователь: {user.username} '
-                 f'Полное имя: {user.full_name} '
-                 f'Город: {user.city} '
-                 f'Подключился: {user.connection_date.day}.{user.connection_date.month}.{user.connection_date.year} '
+            text=f'{user.id}) \n'
+                 f'id: {user.tg_id} \n'
+                 f'Пользователь: {user.username} \n'
+                 f'Полное имя: {user.full_name} \n'
+                 f'Город: {user.city} \n'
+                 f'Подключился: {user.connection_date.day}.{user.connection_date.month}.{user.connection_date.year} \n'
                  f'Отчётов: {len(user.reports)} ',
             callback_data=f'None'
         ))
