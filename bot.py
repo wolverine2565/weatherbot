@@ -375,6 +375,16 @@ async def get_version(message: types.Message):
             f'\n- Доработана панель администратора'
     await message.answer(text, reply_markup=markup)
 
+@dp.message_handler(lambda message: message.text == 'Настройки')
+async def settings(message: types.Message):
+    markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    btn1 = types.KeyboardButton('Админ-панель')
+    btn2 = types.KeyboardButton('Версия программы')
+    btn3 = types.KeyboardButton('Меню')
+    text =  'Настройки'
+    markup.add(btn1, btn2, btn3)
+    await message.answer(text, reply_markup=markup)
+
 async def main_menu():
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2)
     btn1 = types.KeyboardButton('Погода в моём городе')
@@ -382,7 +392,7 @@ async def main_menu():
     btn3 = types.KeyboardButton('История')
     btn4 = types.KeyboardButton('Установить свой город')
     btn5 = types.KeyboardButton('Отправить геолокацию')
-    btn6 = types.KeyboardButton('Админ-панель')
+    btn6 = types.KeyboardButton('Настройки')
     markup.add(btn1, btn2, btn3, btn4, btn5, btn6)
     return markup
 
