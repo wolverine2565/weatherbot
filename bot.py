@@ -57,6 +57,7 @@ async def city_start(message: types.Message):
     await message.answer(text, reply_markup=markup)
     await ChoiceCityWeather.waiting_city.set()
 
+# Добалена погода по геолокации
 @dp.message_handler(lambda message: "Отправить геолокацию" in message.text)
 async def request_location(message: types.Message):
     reply_markup = types.ReplyKeyboardRemove()  # Убираем клавиатуру
