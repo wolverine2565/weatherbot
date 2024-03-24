@@ -258,13 +258,21 @@ async def callback_query(call, state: FSMContext):
             )
             await call.message.edit_text(text='История запросов:', reply_markup=inline_markup)
 
-@dp.message_handler(lambda message: message.from_user.id in bot_config.tg_bot_admin and message.text == 'Администратор')
+@dp.message_handler(lambda message: (message.text == 'Администратор' or message.text == 'Админ-панель'))
 async def admin_panel(message: types.Message):
-    markup = types.reply_keyboard.ReplyKeyboardMarkup(resize_keyboard=True)
-    btn1 = types.KeyboardButton('Список пользователей')
-    markup.add(btn1)
-    text = f'Админ-панель'
-    await message.answer(text, reply_markup=markup)
+    if message.from_user.id in bot_config.tg_bot_admin:
+        markup = types.reply_keyboard.ReplyKeyboardMarkup(resize_keyboard=True)
+        btn1 = types.KeyboardButton('Список пользователей')
+        btn2 = types.KeyboardButton('Версия программы')
+        btn3 = types.KeyboardButton('Меню')
+        markup.add(btn1, btn2, btn3)
+        text = f'Админ-панель'
+        await message.answer(text, reply_markup=markup)
+    else:
+        markup = types.reply_keyboard.ReplyKeyboardMarkup(resize_keyboard=True)
+        text = f'Вы не являетесь администратором'
+        btn1 = types.KeyboardButton('Меню')
+        await message.answer(text, reply_markup=markup)
 
 @dp.message_handler(lambda message: message.from_user.id in bot_config.tg_bot_admin and message.text == 'Список пользователей')
 async def get_all_users(message: types.Message):
@@ -355,6 +363,18 @@ async def callback_query(call, state: FSMContext):
             )
             await call.message.edit_text(text='Все мои пользователи:', reply_markup=inline_markup)
 
+@dp.message_handler(lambda message: message.from_user.id in bot_config.tg_bot_admin and message.text == 'Версия программы')
+async def get_version(message: types.Message):
+    markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    btn1 = types.KeyboardButton('Меню')
+    btn2 = types.KeyboardButton('Админ-панель')
+    markup.add(btn1, btn2)
+    text =  f'Версия 1.2: ' \
+            f'\n- Исправлены ошибки ' \
+            f'\n- Добавлена погода по геолокации' \
+            f'\n- Доработана панель администратора'
+    await message.answer(text, reply_markup=markup)
+
 async def main_menu():
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2)
     btn1 = types.KeyboardButton('Погода в моём городе')
@@ -362,7 +382,8 @@ async def main_menu():
     btn3 = types.KeyboardButton('История')
     btn4 = types.KeyboardButton('Установить свой город')
     btn5 = types.KeyboardButton('Отправить геолокацию')
-    markup.add(btn1, btn2, btn3, btn4, btn5)
+    btn6 = types.KeyboardButton('Админ-панель')
+    markup.add(btn1, btn2, btn3, btn4, btn5, btn6)
     return markup
 
 if __name__ == '__main__':
