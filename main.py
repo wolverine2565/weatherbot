@@ -24,3 +24,25 @@ def get_weather(city):
 
 # print(get_city_coord('Калининград'))
 
+
+def get_weather_coord(coordinates):
+    coordinates = coordinates.split()
+    payload = {'lat': coordinates[1], 'lon': coordinates[0], 'lang': 'ru_RU'}
+    r = requests.get('https://api.weather.yandex.ru/v2/forecast', params=payload, headers=api_config.weather_key)
+    weather_data = json.loads(r.text)
+    district = weather_data['geo_object']['district']['name']
+    locality = weather_data['geo_object']['locality']['name']
+    country = weather_data['geo_object']['country']['name']
+    temp = weather_data['fact']['temp']
+    feels_like = weather_data['fact']['feels_like']
+    wind_speed = weather_data['fact']['wind_speed']
+    pressure_mm = weather_data['fact']['pressure_mm']
+    return f'Погода в {district}, город: {locality}, {country}: ' \
+           f' температура воздуха: {temp} C' \
+           f' ощущается как: {feels_like} C' \
+           f' скорость ветра: {wind_speed} м/с' \
+           f' амтосферное давление {pressure_mm} мм.рт.ст';
+
+print(get_weather_coord('30.314997 59.938784'))
+
+

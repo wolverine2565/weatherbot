@@ -2,6 +2,7 @@ from aiogram import Bot, Dispatcher, types, executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from settings import bot_config
 from api_requests import request
 from database import orm
@@ -14,6 +15,9 @@ dp = Dispatcher(bot, storage=storage)
 
 class ChoiceCityWeather(StatesGroup):
     waiting_city = State()
+
+class ChoiceCoordWeather(StatesGroup):
+    waiting_coord = State()
 
 class SetUserCity(StatesGroup):
     waiting_user_city = State()
@@ -44,7 +48,6 @@ async def get_user_city_weather(message: types.Message):
     await message.answer(text, reply_markup=markup)
     """переработать данный хендлер чтобы сразу запрашивался город нахождения"""
 
-
 @dp.message_handler(regexp='Погода в другом месте')
 async def city_start(message: types.Message):
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
@@ -53,6 +56,43 @@ async def city_start(message: types.Message):
     text = 'Введите название города'
     await message.answer(text, reply_markup=markup)
     await ChoiceCityWeather.waiting_city.set()
+
+
+# @dp.message_handler(regexp='По текущему местопопложению')
+# async def coord_start(message: types.Message):
+#     btn1 = types.InlineKeyboardButton("Отправить свою геолокацию", request_location=True, callback_data='btn_geo')
+#
+#
+# @dp.callback_query_handler(lambda c: c.data == "btn_geo")
+# async def process_callback_button_menu(callback_query: types.CallbackQuery):
+#     MyClass.location = callback_query.location
+#     text = f'Ваши координаты {message.text}'
+
+@dp.message_handler(lambda message: "отправить геолокацию" in message.text.lower())
+async def request_location(message: types.Message):
+    reply_markup = types.ReplyKeyboardRemove()  # Убираем клавиатуру
+    await message.answer("Теперь отправьте свою геолокацию, нажав на кнопку внизу экрана.", reply_markup=reply_markup)
+    await message.answer("Пожалуйста, поделись своим местоположением 🗺️", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True).add(types.KeyboardButton("Отправить местоположение", request_location=True)))
+
+@dp.message_handler(content_types=types.ContentType.LOCATION)
+async def handle_location(message: types.Message):
+    latitude = message.location.latitude
+    longitude = message.location.longitude
+    # await message.answer(f"Ваши координаты: широта {latitude}, долгота {longitude}")
+    # await message.answer(f"Ваши координаты: {message.location.latitude}, {message.location.longitude}")
+    await message.answer(f'{request.get_weather_coord(message.location.latitude, message.location.longitude)}')
+@dp.message_handler(state=ChoiceCoordWeather.waiting_coord)
+async def coord_chosen(message: types.Message, state: FSMContext):
+    await state.update_data(waiting_coord=message.text)
+    markup = await main_menu()
+    coord = await state.get_data()
+    data = request.get_weather_coord(coord.get('waiting_coord'))
+    # orm.create_report(message.from_user.id, data["temp"], data["feels_like"], data["wind_speed"], data["pressure_mm"],
+    #                   city.get('waiting_coord'))
+    # text = f'Погода в {coord.get("waiting_coord")}\nТемпература: {data["temp"]} C\nОщущается как: {data["feels_like"]} C \nСкорость ветра: {data["wind_speed"]}м/с\nДавление: {data["pressure_mm"]}мм'
+    text = f'Ваше местоположение: {message.text}'
+    await message.answer(text, reply_markup=markup)
+    await state.finish()
 
 @dp.message_handler(state=ChoiceCityWeather.waiting_city)
 async def city_chosen(message: types.Message, state: FSMContext):
@@ -339,7 +379,8 @@ async def main_menu():
     btn2 = types.KeyboardButton('Погода в другом месте')
     btn3 = types.KeyboardButton('История')
     btn4 = types.KeyboardButton('Установить свой город')
-    markup.add(btn1, btn2, btn3, btn4)
+    btn5 = types.KeyboardButton('отправить геолокацию')
+    markup.add(btn1, btn2, btn3, btn4, btn5)
     return markup
 
 if __name__ == '__main__':
