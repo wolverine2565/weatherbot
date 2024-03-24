@@ -15,6 +15,7 @@ class User(Base):
     tg_id = Column(BigInteger, nullable=False)
     city = Column(String)
     username = Column(String)
+    full_name = Column(String)
     reports = relationship('WeatherReport', backref='report', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):

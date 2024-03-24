@@ -20,7 +20,7 @@ class SetUserCity(StatesGroup):
 
 @dp.message_handler(commands=['start'])
 async def start_message(message: types.Message):
-    orm.add_user(message.from_user.id)
+    orm.add_user(message.from_user.id, message.from_user.username, message.from_user.full_name)
     markup = await main_menu()
     text = f'Привет {message.from_user.first_name}, я бот, который расскжет тебе о погоде на сегодня'
     await message.answer(text, reply_markup=markup)
