@@ -253,7 +253,11 @@ async def get_all_users(message: types.Message):
     inline_markup = types.InlineKeyboardMarkup()
     for user in users[:current_page*4]:
         inline_markup.add(types.InlineKeyboardButton(
-            text=f'{user.id}) id: {user.tg_id} Подключился: {user.connection_date.day}.{user.connection_date.month}.{user.connection_date.year} Отчётов: {len(user.reports)}',
+            text=f'{user.id}) id: {user.tg_id} '
+                 f'Пользователь: {user.username} '
+                 f'Полное имя: {user.full_name} '
+                 f'Подключился: {user.connection_date.day}.{user.connection_date.month}.{user.connection_date.year} '
+                 f'Отчётов: {len(user.reports)} ',
             callback_data=f'None'
         ))
     current_page += 1
