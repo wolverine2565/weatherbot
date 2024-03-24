@@ -29,8 +29,9 @@ def get_weather_coord(lat, lon):
     feels_like = weather_data['fact']['feels_like']
     wind_speed = weather_data['fact']['wind_speed']
     pressure_mm = weather_data['fact']['pressure_mm']
-    return f'Погода в {district}, город: {locality}, {country}: ' \
-           f' температура воздуха: {temp} C' \
-           f' ощущается как: {feels_like} C' \
-           f' скорость ветра: {wind_speed} м/с' \
-           f' амтосферное давление {pressure_mm} мм.рт.ст';
+    return weather_data
+    # return f'Погода в {district}, город: {locality}, {country}: ' \
+    #        f' температура воздуха: {temp} C' \
+    #        f' ощущается как: {feels_like} C' \
+    #        f' скорость ветра: {wind_speed} м/с' \
+    #        f' амтосферное давление {pressure_mm} мм.рт.ст';
