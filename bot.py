@@ -387,6 +387,7 @@ async def get_version(message: types.Message):
             f'\n- Добавлена погода по геолокации' \
             f'\n- Доработана панель администратора' \
             f'\n- Исправлена ошибка при которой название кнопки "Меню" сохранялось как новый город'
+            f'\n------ТЕСТ-------'
     await message.answer(text, reply_markup=markup)
 
 @dp.message_handler(lambda message: message.text == 'Настройки')
