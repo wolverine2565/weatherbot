@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
 from .models import Base, User, WeatherReport
 
@@ -57,3 +57,9 @@ def get_all_users():
     session = Session()
     users = session.query(User).all()
     return users
+
+def get_max_report():
+    session = Session()
+    max_id = session.query(func.max(WeatherReport.id)).scalar()
+    return max_id
+

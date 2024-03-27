@@ -395,7 +395,18 @@ async def settings(message: types.Message):
     btn1 = types.KeyboardButton('Админ-панель')
     btn2 = types.KeyboardButton('Версия программы')
     btn3 = types.KeyboardButton('Меню')
+    btn4 = types.KeyboardButton('Статистика')
     text =  'Настройки'
+    markup.add(btn1, btn2, btn3, btn4)
+    await message.answer(text, reply_markup=markup)
+
+@dp.message_handler(lambda message: message.text == 'Статистика')
+async def settings(message: types.Message):
+    markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    max_report = orm.get_max_report()
+    text = f'Количество запросов: {max_report}'
+    btn1 = types.KeyboardButton('Меню')
+    await message.answer(text, reply_markup=markup)
     markup.add(btn1, btn2, btn3)
     await message.answer(text, reply_markup=markup)
 
