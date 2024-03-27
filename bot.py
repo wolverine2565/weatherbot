@@ -383,7 +383,9 @@ async def get_version(message: types.Message):
     btn1 = types.KeyboardButton('Меню')
     btn2 = types.KeyboardButton('Админ-панель')
     markup.add(btn1, btn2)
-    text =  f'Версия 1.21: ' \
+    text =  f'Версия 1.22:' \
+            f'\n -Добавлен раздел "Статистика"' \
+            f'\nВерсия 1.21: ' \
             f'\n- Исправлены ошибки ' \
             f'\n- Добавлена погода по геолокации' \
             f'\n- Доработана панель администратора' \
