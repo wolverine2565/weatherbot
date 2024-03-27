@@ -404,7 +404,8 @@ async def settings(message: types.Message):
 async def settings(message: types.Message):
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     max_report = orm.get_max_report()
-    text = f'Количество запросов: {max_report}'
+    text = f'Количество запросов: {max_report}' \
+           f'\nСамый популярный город в запросах: {orm.get_popular_city()}'
     btn1 = types.KeyboardButton('Меню')
     await message.answer(text, reply_markup=markup)
     markup.add(btn1, btn2, btn3)

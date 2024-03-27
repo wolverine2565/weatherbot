@@ -62,4 +62,13 @@ def get_max_report():
     session = Session()
     max_id = session.query(func.max(WeatherReport.id)).scalar()
     return max_id
-
+# самый популярный город в запросах
+def get_popular_city():
+    session = Session()
+    subquery = session.query(WeatherReport.city, func.count(WeatherReports.city).label('city_count')) \
+        .group_by(WeatherReport.city) \
+        .order_by(func.count(WeatherReport.city).desc()) \
+        .limit(1).subquery()
+    result = session.query(subquery.c.city).first()
+    city_with_max_reports = result[0] if result is not None else None
+    return city_with_max_reports
