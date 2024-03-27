@@ -57,7 +57,7 @@ def get_all_users():
     session = Session()
     users = session.query(User).all()
     return users
-
+# количество запросов по максимальному id
 def get_max_report():
     session = Session()
     max_id = session.query(func.max(WeatherReport.id)).scalar()
