@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
-from .models import Base, User, WeatherReport
+from .models import Base, User, WeatherReport, City
 
 from settings import database_config
 
@@ -72,3 +72,14 @@ def get_popular_city():
     result = session.query(subquery.c.city).first()
     city_with_max_reports = result[0] if result is not None else None
     return city_with_max_reports
+
+# Добавление нового города в таблицу city
+def new_city_add(city):
+    session = Session()
+    # Проверка наличия города в таблице
+    existing_city = session.query(City).filter_by(city_name=city).first()
+    if existing_city is None:
+        # Город отсутствует в таблице, добавляем его
+        new_city = City(city_name=city)
+        session.add(new_city)
+        session.commit()
