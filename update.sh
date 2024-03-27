@@ -1,5 +1,8 @@
 #!/bin/bash
 
+cd /home/admin
+
+
 REPO_URL="https://github.com/wolverine2565/weatherbot"
 DEST_DIR="/home/admin/weatherbot"
 
