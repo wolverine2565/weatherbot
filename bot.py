@@ -407,7 +407,6 @@ async def settings(message: types.Message):
     text = f'Количество запросов: {max_report}' \
            f'\nСамый популярный город в запросах: {orm.get_popular_city()}'
     btn1 = types.KeyboardButton('Меню')
-    await message.answer(text, reply_markup=markup)
     markup.add(btn1)
     await message.answer(text, reply_markup=markup)
 
