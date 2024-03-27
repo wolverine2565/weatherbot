@@ -65,7 +65,7 @@ def get_max_report():
 # самый популярный город в запросах
 def get_popular_city():
     session = Session()
-    subquery = session.query(WeatherReport.city, func.count(WeatherReports.city).label('city_count')) \
+    subquery = session.query(WeatherReport.city, func.count(WeatherReport.city).label('city_count')) \
         .group_by(WeatherReport.city) \
         .order_by(func.count(WeatherReport.city).desc()) \
         .limit(1).subquery()
