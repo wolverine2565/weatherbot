@@ -385,7 +385,7 @@ async def get_version(message: types.Message):
     btn2 = types.KeyboardButton('⚙️ Админ-панель')
     markup.add(btn1, btn2)
     text =  f'Версия 1.23:' \
-            f'\- Добавлены иконки в меню' \
+            f'\n - Добавлены иконки в меню' \
             f'\nВерсия 1.22:' \
             f'\n -Добавлен раздел "Статистика"' \
             f'\nВерсия 1.21: ' \
