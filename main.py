@@ -1,7 +1,7 @@
 import json
 import requests
 
-from database.models import User
+from database.models import User, WeatherReport, City
 from database.orm import Session
 from settings import api_config
 
@@ -56,5 +56,30 @@ def add_user(tg_id, username, full_name):
         session.add(new_user)
         session.commit()
 
-add_user(465, 3, 1)
+from sqlalchemy import func
+
+# Assuming you have the required imports and SQLAlchemy models already set up
+def get_popular_city():
+# Create a session
+    session = Session()
+# Subquery to get the city_id with the highest number of weather reports
+    subquery = session.query(func.count(WeatherReport.city_id).label('report_count'),
+                         WeatherReport.city_id).\
+        group_by(WeatherReport.city_id).\
+        order_by(func.count(WeatherReport.city_id).desc()).\
+        limit(1).subquery('t')
+
+# Main query to get the city name for the city with the highest number of weather reports
+    result = session.query(City.city_name).\
+    join(subquery, City.id == subquery.c.city_id).first()
+    if result:
+        city_name = result[0]
+        return city_name
+    else:
+        return
+
+# Close the session
+        session.close()
+
+get_popular_city()
 

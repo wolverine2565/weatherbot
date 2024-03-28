@@ -19,11 +19,6 @@ def add_user(tg_id, username, full_name):
         session.commit()
 
 # установить город проживания
-# def set_user_city(tg_id, city):
-#     session = Session()
-#     user = session.query(User).filter(User.tg_id == tg_id).first()
-#     user.city = city
-#     session.commit()
 def set_user_city(tg_id, city_name):
     session = Session()
     city = session.query(City).filter(City.city_name == city_name).first()
@@ -39,7 +34,6 @@ def set_user_city(tg_id, city_name):
     else:
         print(f"User with tg_id: {tg_id} not found.")
     session.close()
-
 
 # создание прогноза
 def create_report(tg_id, temp, feels_like, wind_speed, pressure_mm, city):
@@ -61,8 +55,18 @@ def create_report(tg_id, temp, feels_like, wind_speed, pressure_mm, city):
 # город проживания
 def get_user_city(tg_id):
     session = Session()
+#     user = session.query(User).filter(User.tg_id == tg_id).first()
+#     return user.city
     user = session.query(User).filter(User.tg_id == tg_id).first()
-    return user.city
+    if user:
+        city = user.city.city_name if user.city else None
+        session.close()
+        return city
+    else:
+        print(f"User with tg_id: {tg_id} not found.")
+        session.close()
+        return None
+
 
 # получить историю
 def get_reports(tg_id):
@@ -91,13 +95,26 @@ def get_max_report():
 # самый популярный город в запросах
 def get_popular_city():
     session = Session()
-    subquery = session.query(WeatherReport.city, func.count(WeatherReport.city).label('city_count')) \
-        .group_by(WeatherReport.city) \
-        .order_by(func.count(WeatherReport.city).desc()) \
-        .limit(1).subquery()
-    result = session.query(subquery.c.city).first()
-    city_with_max_reports = result[0] if result is not None else None
-    return city_with_max_reports
+    # subquery = session.query(WeatherReport.city, func.count(WeatherReport.city).label('city_count')) \
+    #     .group_by(WeatherReport.city) \
+    #     .order_by(func.count(WeatherReport.city).desc()) \
+    #     .limit(1).subquery()
+    # result = session.query(subquery.c.city).first()
+    # city_with_max_reports = result[0] if result is not None else None
+    # return city_with_max_reports
+    subquery = session.query(func.count(WeatherReport.city_id).label('report_count'),
+                             WeatherReport.city_id). \
+        group_by(WeatherReport.city_id). \
+        order_by(func.count(WeatherReport.city_id).desc()). \
+        limit(1).subquery('t')
+    result = session.query(City.city_name). \
+        join(subquery, City.id == subquery.c.city_id).first()
+    if result:
+        city_name = result[0]
+        return city_name
+    else:
+        return
+        session.close()
 
 # Добавление нового города в таблицу city
 def new_city_add(city):
