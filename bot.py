@@ -60,9 +60,10 @@ async def city_start(message: types.Message):
 # Добалена погода по геолокации
 @dp.message_handler(lambda message: "Отправить геолокацию" in message.text)
 async def request_location(message: types.Message):
-    reply_markup = types.ReplyKeyboardRemove()  # Убираем клавиатуру
-    # await message.answer("Теперь отправьте свою геолокацию, нажав на кнопку внизу экрана.", reply_markup=reply_markup)
-    await message.answer("Пожалуйста, поделись своим местоположением 🗺️", reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True).add(types.KeyboardButton("Отправить местоположение", request_location=True)))
+    reply_markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    reply_markup.add(types.KeyboardButton("Отправить местоположение 🗺", request_location=True))
+    reply_markup.add(types.KeyboardButton("📋 Меню"))
+    await message.answer("Пожалуйста, поделись своим местоположением 🗺", reply_markup=reply_markup)
 
 @dp.message_handler(content_types=types.ContentType.LOCATION)
 async def handle_location(message: types.Message):
@@ -271,13 +272,13 @@ async def callback_query(call, state: FSMContext):
             )
             await call.message.edit_text(text='История запросов:', reply_markup=inline_markup)
 
-@dp.message_handler(lambda message: (message.text == 'Администратор' or message.text == 'Админ-панель'))
+@dp.message_handler(lambda message: (message.text == 'Администратор' or message.text == '⚙️ Админ-панель'))
 async def admin_panel(message: types.Message):
     if message.from_user.id in bot_config.tg_bot_admin:
         markup = types.reply_keyboard.ReplyKeyboardMarkup(resize_keyboard=True)
-        btn1 = types.KeyboardButton('Список пользователей')
-        btn2 = types.KeyboardButton('Версия программы')
-        btn3 = types.KeyboardButton('Меню')
+        btn1 = types.KeyboardButton('📑 Список пользователей')
+        btn2 = types.KeyboardButton('🗓 Версия программы')
+        btn3 = types.KeyboardButton('📋 Меню')
         markup.add(btn1, btn2, btn3)
         text = f'Админ-панель'
         await message.answer(text, reply_markup=markup)
@@ -287,7 +288,7 @@ async def admin_panel(message: types.Message):
         btn1 = types.KeyboardButton('Меню')
         await message.answer(text, reply_markup=markup)
 
-@dp.message_handler(lambda message: message.from_user.id in bot_config.tg_bot_admin and message.text == 'Список пользователей')
+@dp.message_handler(lambda message: message.from_user.id in bot_config.tg_bot_admin and message.text == '📑 Список пользователей')
 async def get_all_users(message: types.Message):
     current_page = 1
     users = orm.get_all_users()
@@ -377,11 +378,11 @@ async def callback_query(call, state: FSMContext):
             )
             await call.message.edit_text(text='Все мои пользователи:', reply_markup=inline_markup)
 
-@dp.message_handler(lambda message: message.from_user.id in bot_config.tg_bot_admin and message.text == 'Версия программы')
+@dp.message_handler(lambda message: message.from_user.id in bot_config.tg_bot_admin and message.text == '🗓 Версия программы')
 async def get_version(message: types.Message):
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    btn1 = types.KeyboardButton('Меню')
-    btn2 = types.KeyboardButton('Админ-панель')
+    btn1 = types.KeyboardButton('📋 Меню')
+    btn2 = types.KeyboardButton('⚙️ Админ-панель')
     markup.add(btn1, btn2)
     text =  f'Версия 1.22:' \
             f'\n -Добавлен раздел "Статистика"' \
@@ -392,18 +393,18 @@ async def get_version(message: types.Message):
             f'\n- Исправлена ошибка при которой название кнопки "Меню" сохранялось как новый город'
     await message.answer(text, reply_markup=markup)
 
-@dp.message_handler(lambda message: message.text == 'Настройки')
+@dp.message_handler(lambda message: message.text == 'Настройки' or message.text == '🛠 Настройки')
 async def settings(message: types.Message):
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    btn1 = types.KeyboardButton('Админ-панель')
-    btn2 = types.KeyboardButton('Версия программы')
-    btn3 = types.KeyboardButton('Меню')
-    btn4 = types.KeyboardButton('Статистика')
+    btn1 = types.KeyboardButton('⚙️ Админ-панель')
+    btn2 = types.KeyboardButton('🗓 Версия программы')
+    btn3 = types.KeyboardButton('📋 Меню')
+    btn4 = types.KeyboardButton('📈 Статистика')
     text =  'Настройки'
     markup.add(btn1, btn2, btn3, btn4)
     await message.answer(text, reply_markup=markup)
 
-@dp.message_handler(lambda message: message.text == 'Статистика')
+@dp.message_handler(lambda message: message.text == 'Статистика' or message.text == '📈 Статистика')
 async def settings(message: types.Message):
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     max_report = orm.get_max_report()
@@ -415,12 +416,12 @@ async def settings(message: types.Message):
 
 async def main_menu():
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2)
-    btn1 = types.KeyboardButton('Погода в моём городе')
-    btn2 = types.KeyboardButton('Погода в другом месте')
-    btn3 = types.KeyboardButton('История')
-    btn4 = types.KeyboardButton('Установить свой город')
-    btn5 = types.KeyboardButton('Отправить геолокацию')
-    btn6 = types.KeyboardButton('Настройки')
+    btn1 = types.KeyboardButton('🏠 Погода в моём городе')
+    btn2 = types.KeyboardButton('🌎 Погода в другом месте')
+    btn3 = types.KeyboardButton('📜 История')
+    btn4 = types.KeyboardButton('✈️ Установить свой город')
+    btn5 = types.KeyboardButton('🗺 Отправить геолокацию')
+    btn6 = types.KeyboardButton('🛠 Настройки')
     markup.add(btn1, btn2, btn3, btn4, btn5, btn6)
     return markup
 
