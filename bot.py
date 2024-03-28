@@ -51,7 +51,7 @@ async def get_user_city_weather(message: types.Message):
 @dp.message_handler(regexp='Погода в другом месте')
 async def city_start(message: types.Message):
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    btn1 = types.KeyboardButton('Меню')
+    btn1 = types.KeyboardButton('📋 Меню')
     markup.add(btn1)
     text = 'Введите название города'
     await message.answer(text, reply_markup=markup)
@@ -82,7 +82,7 @@ async def city_chosen(message: types.Message, state: FSMContext):
     if message.text[0].islower():
         await message.answer('Названия городов пишутся с большой буквы)')
         return
-    elif message.text == 'Меню':
+    elif message.text == 'Меню' or message.text == '📋 Меню':
         await start_message(message)
         await state.reset_state()
         #выход без сохранения
@@ -119,7 +119,7 @@ async def user_city_chosen(message: types.Message, state: FSMContext):
     if message.text[0].islower():
         await message.answer('Названия городов пишутся с большой буквы)')
         return
-    elif message.text == 'Меню':
+    elif message.text == 'Меню' or message.text == '📋 Меню':
         await start_message(message)
         await state.reset_state()
         #выход без сохранения
