@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine, func
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import sessionmaker
 from .models import Base, User, WeatherReport, City
 
@@ -28,7 +29,16 @@ def set_user_city(tg_id, city):
 def create_report(tg_id, temp, feels_like, wind_speed, pressure_mm, city):
     session = Session()
     user = session.query(User).filter(User.tg_id == tg_id).first()
-    new_report = WeatherReport(temp=temp, feels_like=feels_like, wind_speed=wind_speed, pressure_mm=pressure_mm, city=city, owner=user.id)
+    try:
+        existing_city = session.query(City).filter(City.city_name == city).one()
+    except NoResultFound:
+        new_city = City(city_name=city)
+        session.add(new_city)
+        session.flush()
+        session.refresh(new_city)
+    else:
+        new_city = existing_city # Добавлена проверка существующей записи в таблице city
+    new_report = WeatherReport(temp=temp, feels_like=feels_like, wind_speed=wind_speed, pressure_mm=pressure_mm, city_id=new_city.id, owner=user.id)
     session.add(new_report)
     session.commit()
 

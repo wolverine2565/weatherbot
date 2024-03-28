@@ -30,7 +30,8 @@ class WeatherReport(Base):
     feels_like = Column(Integer, nullable=False)
     wind_speed = Column(Integer, nullable=False)
     pressure_mm = Column(Integer, nullable=False)
-    city = Column(String, nullable=False)
+    city_id = Column(Integer, ForeignKey('City.id'), nullable=False)
+    city = relationship("City")
 
     def __repr__(self):
         return self.city
