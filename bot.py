@@ -32,13 +32,13 @@ async def start_message(message: types.Message):
 @dp.message_handler(regexp='Погода в моём городе')
 async def get_user_city_weather(message: types.Message):
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    btn1 = types.KeyboardButton('Меню')
+    btn1 = types.KeyboardButton('📋 Меню')
     markup.add(btn1)
     city = orm.get_user_city(message.from_user.id)
     if city is None:
         text = 'Пожалуйста установите город проживания'
         markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-        btn1 = types.KeyboardButton('Установить свой город')
+        btn1 = types.KeyboardButton('✈️ Установить свой город')
         markup.add(btn1)
         await message.answer(text, reply_markup=markup)
         return
@@ -384,7 +384,9 @@ async def get_version(message: types.Message):
     btn1 = types.KeyboardButton('📋 Меню')
     btn2 = types.KeyboardButton('⚙️ Админ-панель')
     markup.add(btn1, btn2)
-    text =  f'Версия 1.22:' \
+    text =  f'Версия 1.23:' \
+            f'\- Добавлены иконки в меню' \
+            f'\nВерсия 1.22:' \
             f'\n -Добавлен раздел "Статистика"' \
             f'\nВерсия 1.21: ' \
             f'\n- Исправлены ошибки ' \
