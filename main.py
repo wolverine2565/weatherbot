@@ -1,5 +1,8 @@
 import json
 import requests
+
+from database.models import User
+from database.orm import Session
 from settings import api_config
 
 
@@ -43,6 +46,15 @@ def get_weather_coord(coordinates):
            f' скорость ветра: {wind_speed} м/с' \
            f' амтосферное давление {pressure_mm} мм.рт.ст';
 
-print(get_weather_coord('30.314997 59.938784'))
+# print(get_weather_coord('30.314997 59.938784'))
 
+def add_user(tg_id, username, full_name):
+    session = Session()
+    user = session.query(User).filter(User.tg_id == tg_id).first()
+    if user is None:
+        new_user = User(tg_id=tg_id, username=username, full_name=full_name)
+        session.add(new_user)
+        session.commit()
+
+add_user(465, 3, 1)
 

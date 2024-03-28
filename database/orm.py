@@ -19,11 +19,27 @@ def add_user(tg_id, username, full_name):
         session.commit()
 
 # установить город проживания
-def set_user_city(tg_id, city):
+# def set_user_city(tg_id, city):
+#     session = Session()
+#     user = session.query(User).filter(User.tg_id == tg_id).first()
+#     user.city = city
+#     session.commit()
+def set_user_city(tg_id, city_name):
     session = Session()
+    city = session.query(City).filter(City.city_name == city_name).first()
+    if city is None:
+        city = City(city_name=city_name)
+        session.add(city)
+        session.commit()
     user = session.query(User).filter(User.tg_id == tg_id).first()
-    user.city = city
-    session.commit()
+    if user:
+        user.city = city
+        session.commit()
+        print(f"City updated for user with tg_id: {tg_id}")
+    else:
+        print(f"User with tg_id: {tg_id} not found.")
+    session.close()
+
 
 # создание прогноза
 def create_report(tg_id, temp, feels_like, wind_speed, pressure_mm, city):

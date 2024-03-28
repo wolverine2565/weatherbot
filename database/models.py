@@ -12,10 +12,11 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     connection_date = Column(DateTime, default=datetime.now, nullable=False)
     tg_id = Column(BigInteger, nullable=False)
-    city = Column(String)
+    city_id = Column(Integer, ForeignKey('City.id'), nullable=True)
     username = Column(String)
     full_name = Column(String)
     reports = relationship('WeatherReport', backref='report', lazy=True, cascade='all, delete-orphan')
+    city = relationship("City")
 
     def __repr__(self):
         return self.tg_id
