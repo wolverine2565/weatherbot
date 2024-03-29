@@ -414,7 +414,9 @@ async def get_version(message: types.Message):
     btn1 = types.KeyboardButton('📋 Меню')
     btn2 = types.KeyboardButton('⚙️ Админ-панель')
     markup.add(btn1, btn2)
-    text =  f'Версия 1.23:' \
+    text =  f'Версия 1.24:' \
+            f'\n - Добавлена возможность пополнения баланса в настройках' \
+            f'\nВерсия 1.23:' \
             f'\n - Добавлены иконки в меню' \
             f'\nВерсия 1.22:' \
             f'\n -Добавлен раздел "Статистика"' \
@@ -494,7 +496,7 @@ async def city_start(message: types.Message):
     btn1 = types.KeyboardButton('📋 Меню')
     btn2 = types.KeyboardButton('🔧 Добавить новый параметр')
     markup.add(btn1, btn2)
-    text = 'Введите сумму для пополнения'
+    text = 'Системные параметры'
     await message.answer(text, reply_markup=markup)
 
 @dp.message_handler(regexp='Добавить новый параметр')
