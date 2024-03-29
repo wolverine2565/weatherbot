@@ -25,6 +25,12 @@ class SetUserCity(StatesGroup):
 class ChoiceSumm(StatesGroup):
     waiting_summ = State()
 
+class ChoiceParameterName(StatesGroup):
+    waiting_p_name = State()
+
+class ChoiceParameterValue(StatesGroup):
+    waiting_p_value = State()
+
 @dp.message_handler(commands=['start'])
 async def start_message(message: types.Message):
     orm.add_user(message.from_user.id, message.from_user.username, message.from_user.full_name)
@@ -45,10 +51,18 @@ async def get_user_city_weather(message: types.Message):
         markup.add(btn1)
         await message.answer(text, reply_markup=markup)
         return
-    data = request.get_weather(city)
-    orm.create_report(message.from_user.id, data["temp"], data["feels_like"], data["wind_speed"], data["pressure_mm"], city)
-    text = f'Погода в {city}\nТемпература: {data["temp"]} C\nОщущается как: {data["feels_like"]} C \nСкорость ветра: {data["wind_speed"]}м/с\nДавление: {data["pressure_mm"]}мм'
-    await message.answer(text, reply_markup=markup)
+    else:
+        user_id = orm.get_user_id(message.from_user.id)
+        if int(orm.get_current_balance(user_id)) < 1:
+            await message.answer('Сначала пополните баланс в разделе "Настройки"')
+            await state.reset_state()
+            # выход без сохранения
+        else:
+            data = request.get_weather(city)
+            orm.create_report(message.from_user.id, data["temp"], data["feels_like"], data["wind_speed"], data["pressure_mm"], city)
+            orm.bill_use(user_id)
+            text = f'Погода в {city}\nТемпература: {data["temp"]} C\nОщущается как: {data["feels_like"]} C \nСкорость ветра: {data["wind_speed"]}м/с\nДавление: {data["pressure_mm"]}мм'
+            await message.answer(text, reply_markup=markup)
     """переработать данный хендлер чтобы сразу запрашивался город нахождения"""
 
 @dp.message_handler(regexp='Погода в другом месте')
@@ -70,19 +84,31 @@ async def request_location(message: types.Message):
 
 @dp.message_handler(content_types=types.ContentType.LOCATION)
 async def handle_location(message: types.Message):
-    latitude = message.location.latitude
-    longitude = message.location.longitude
-    data = request.get_weather_coord(latitude, longitude)
-    markup = await main_menu()
-    orm.create_report(message.from_user.id, data['fact']['temp'], data['fact']['feels_like'], data['fact']['wind_speed'], data['fact']['pressure_mm'],
+    user_id = orm.get_user_id(message.from_user.id)
+    if int(orm.get_current_balance(user_id)) < 1:
+        await message.answer('Сначала пополните баланс в разделе "Настройки"')
+        await state.reset_state()
+        # выход без сохранения
+    else:
+        latitude = message.location.latitude
+        longitude = message.location.longitude
+        data = request.get_weather_coord(latitude, longitude)
+        markup = await main_menu()
+        orm.create_report(message.from_user.id, data['fact']['temp'], data['fact']['feels_like'], data['fact']['wind_speed'], data['fact']['pressure_mm'],
                       data['geo_object']['locality']['name'])
-    text = f'Погода в {data["geo_object"]["locality"]["name"]}\nТемпература: {data["fact"]["temp"]} C\nОщущается как: {data["fact"]["feels_like"]} C \nСкорость ветра: {data["fact"]["wind_speed"]}м/с\nДавление: {data["fact"]["pressure_mm"]}мм'
-    await message.answer(text, reply_markup=markup)
+        orm.bill_use(user_id)
+        text = f'Погода в {data["geo_object"]["locality"]["name"]}\nТемпература: {data["fact"]["temp"]} C\nОщущается как: {data["fact"]["feels_like"]} C \nСкорость ветра: {data["fact"]["wind_speed"]}м/с\nДавление: {data["fact"]["pressure_mm"]}мм'
+        await message.answer(text, reply_markup=markup)
 
 
 @dp.message_handler(state=ChoiceCityWeather.waiting_city)
 async def city_chosen(message: types.Message, state: FSMContext):
-    if message.text[0].islower():
+    user_id = orm.get_user_id(message.from_user.id)
+    if int(orm.get_current_balance(user_id)) < 1:
+        await message.answer('Сначала пополните баланс в разделе "Настройки"')
+        await state.reset_state()
+        #выход без сохранения
+    elif message.text[0].islower():
         await message.answer('Названия городов пишутся с большой буквы)')
         return
     elif message.text == 'Меню' or message.text == '📋 Меню':
@@ -92,10 +118,12 @@ async def city_chosen(message: types.Message, state: FSMContext):
     else:
         await state.update_data(waiting_city=message.text)
         markup = await main_menu()
+        user_id = orm.get_user_id(message.from_user.id)
         city = await state.get_data()
         data = request.get_weather(city.get('waiting_city'))
         orm.create_report(message.from_user.id, data["temp"], data["feels_like"], data["wind_speed"], data["pressure_mm"],
                       city.get('waiting_city'))
+        orm.bill_use(user_id)
         orm.new_city_add(city.get('waiting_city')) # запись нового города в таблицу city
         text = f'Погода в {city.get("waiting_city")}\nТемпература: {data["temp"]} C\nОщущается как: {data["feels_like"]} C \nСкорость ветра: {data["wind_speed"]}м/с\nДавление: {data["pressure_mm"]}мм'
         await message.answer(text, reply_markup=markup)
@@ -282,7 +310,8 @@ async def admin_panel(message: types.Message):
         btn1 = types.KeyboardButton('📑 Список пользователей')
         btn2 = types.KeyboardButton('🗓 Версия программы')
         btn3 = types.KeyboardButton('📋 Меню')
-        markup.add(btn1, btn2, btn3)
+        btn4 = types.KeyboardButton('⚙️ Системные параметры️')
+        markup.add(btn1, btn2, btn3, btn4)
         text = f'Админ-панель'
         await message.answer(text, reply_markup=markup)
     else:
@@ -405,7 +434,7 @@ async def settings(message: types.Message):
     btn2 = types.KeyboardButton('🗓 Версия программы')
     btn3 = types.KeyboardButton('📋 Меню')
     btn4 = types.KeyboardButton('📈 Статистика')
-    btn5 = types.KeyboardButton('Баланс')
+    btn5 = types.KeyboardButton('🧮 Баланс')
     text =  'Настройки'
     markup.add(btn1, btn2, btn3, btn4, btn5)
     await message.answer(text, reply_markup=markup)
@@ -453,13 +482,37 @@ async def balance_up(message: types.Message, state: FSMContext):
 async def city_start(message: types.Message):
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     btn1 = types.KeyboardButton('📋 Меню')
-    btn2 = types.KeyboardButton('Пополнить баланс')
+    btn2 = types.KeyboardButton('💰 Пополнить баланс')
     user_id = orm.get_user_id(message.from_user.id)
     balance = orm.get_current_balance(user_id)
     markup.add(btn1, btn2)
     text = f'Ваш баланс {balance} запросов'
     await message.answer(text, reply_markup=markup)
     await ChoiceSumm.waiting_summ.set()
+
+@dp.message_handler(regexp='Системные параметры')
+async def city_start(message: types.Message):
+    markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    btn1 = types.KeyboardButton('📋 Меню')
+    btn2 = types.KeyboardButton('🔧 Добавить новый параметр')
+    markup.add(btn1, btn2)
+    text = 'Введите сумму для пополнения'
+    await message.answer(text, reply_markup=markup)
+
+@dp.message_handler(regexp='Добавить новый параметр')
+async def add_parameter(message: types.Message, state: FSMContext):
+
+    await message.answer("Введите название и значение параметра через запятую:")
+    async def wait_for_p_value(message: types.Message):
+        user_id = orm.get_user_id(message.from_user.id)
+        config = message.text.split()
+        p_name = config[0]
+        p_value = config[1]
+        # Можно добавить проверки или обработку p_value здесь
+        await state.finish()  # Завершаем состояние FSM
+        orm.add_config (user_id, p_name, p_value)
+    # Ожидаем ответ пользователя для p_value
+    dp.register_message_handler(wait_for_p_value, state=ChoiceParameterName.waiting_p_value)
 
 async def main_menu():
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2)
@@ -469,8 +522,7 @@ async def main_menu():
     btn4 = types.KeyboardButton('✈️ Установить свой город')
     btn5 = types.KeyboardButton('🗺 Отправить геолокацию')
     btn6 = types.KeyboardButton('🛠 Настройки')
-    btn7 = types.KeyboardButton ('Пополнить баланс')
-    markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7)
+    markup.add(btn1, btn2, btn3, btn4, btn5, btn6)
     return markup
 
 if __name__ == '__main__':

@@ -1,7 +1,9 @@
+from datetime import datetime
+
 from sqlalchemy import create_engine, func
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import sessionmaker
-from .models import Base, User, WeatherReport, City, Billing
+from .models import Base, User, WeatherReport, City, Billing, Config
 
 from settings import database_config
 
@@ -172,6 +174,17 @@ def get_user_id(telegram_id):
         return user_id if user_id else 0
     except Exception as e:
         return 0
+    finally:
+        session.close()
+
+def add_config(user_id, p_name, p_value):
+    session = Session()
+    try:
+        new_config = Config(date=func.current_timestamp(), createby=user_id, name=p_name, value=p_value)
+        session.add(new_config)
+        session.commit()
+    except Exception as e:
+        session.rollback()
     finally:
         session.close()
 

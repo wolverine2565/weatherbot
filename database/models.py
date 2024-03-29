@@ -56,3 +56,14 @@ class Billing(Base):
 
     def __repr__(self):
         return self.balance
+
+class Config(Base):
+    __tablename__ = 'Config'
+    id = Column(Integer, primary_key=True)
+    date = Column(DateTime, default=datetime.now, nullable=False)
+    createby = Column(Integer, ForeignKey('Users.id'), nullable=False)
+    name = Column(String, nullable=False)
+    value = Column(String, nullable=False)
+
+    def __repr__(self):
+        return self.value
