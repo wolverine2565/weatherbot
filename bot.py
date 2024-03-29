@@ -22,6 +22,9 @@ class ChoiceCoordWeather(StatesGroup):
 class SetUserCity(StatesGroup):
     waiting_user_city = State()
 
+class ChoiceSumm(StatesGroup):
+    waiting_summ = State()
+
 @dp.message_handler(commands=['start'])
 async def start_message(message: types.Message):
     orm.add_user(message.from_user.id, message.from_user.username, message.from_user.full_name)
@@ -402,8 +405,9 @@ async def settings(message: types.Message):
     btn2 = types.KeyboardButton('🗓 Версия программы')
     btn3 = types.KeyboardButton('📋 Меню')
     btn4 = types.KeyboardButton('📈 Статистика')
+    btn5 = types.KeyboardButton('Баланс')
     text =  'Настройки'
-    markup.add(btn1, btn2, btn3, btn4)
+    markup.add(btn1, btn2, btn3, btn4, btn5)
     await message.answer(text, reply_markup=markup)
 
 @dp.message_handler(lambda message: message.text == 'Статистика' or message.text == '📈 Статистика')
@@ -416,6 +420,47 @@ async def settings(message: types.Message):
     markup.add(btn1)
     await message.answer(text, reply_markup=markup)
 
+@dp.message_handler(regexp='Пополнить баланс')
+async def city_start(message: types.Message):
+    markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    btn1 = types.KeyboardButton('📋 Меню')
+    markup.add(btn1)
+    text = 'Введите сумму для пополнения'
+    await message.answer(text, reply_markup=markup)
+    await ChoiceSumm.waiting_summ.set()
+
+@dp.message_handler(state=ChoiceSumm.waiting_summ)
+async def balance_up(message: types.Message, state: FSMContext):
+    if message.text.isdigit():
+        if int(message.text) > 10:
+            await message.answer(f'Сумма пополнения не должна быть больше 10')
+        elif int(message.text) <= 0:
+            await message.answer(f'Сумма пополнения должна быть больше нуля')
+        else:
+            user_id = orm.get_user_id(message.from_user.id)
+            orm.bill_charge(user_id, message.text)
+            await message.answer(f'Ваш баланс пополнен на {message.text} запросов'
+                                f'\nТекущий баланс: {orm.get_current_balance(user_id)}')
+        return
+    elif message.text == 'Меню' or message.text == '📋 Меню':
+        await start_message(message)
+        await state.reset_state()
+        #выход без сохранения
+    else:
+        await message.answer(f'Введите сумму числом')
+
+@dp.message_handler(regexp='Баланс')
+async def city_start(message: types.Message):
+    markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    btn1 = types.KeyboardButton('📋 Меню')
+    btn2 = types.KeyboardButton('Пополнить баланс')
+    user_id = orm.get_user_id(message.from_user.id)
+    balance = orm.get_current_balance(user_id)
+    markup.add(btn1, btn2)
+    text = f'Ваш баланс {balance} запросов'
+    await message.answer(text, reply_markup=markup)
+    await ChoiceSumm.waiting_summ.set()
+
 async def main_menu():
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2)
     btn1 = types.KeyboardButton('🏠 Погода в моём городе')
@@ -424,7 +469,8 @@ async def main_menu():
     btn4 = types.KeyboardButton('✈️ Установить свой город')
     btn5 = types.KeyboardButton('🗺 Отправить геолокацию')
     btn6 = types.KeyboardButton('🛠 Настройки')
-    markup.add(btn1, btn2, btn3, btn4, btn5, btn6)
+    btn7 = types.KeyboardButton ('Пополнить баланс')
+    markup.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7)
     return markup
 
 if __name__ == '__main__':

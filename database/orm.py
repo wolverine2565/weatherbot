@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, func
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import sessionmaker
-from .models import Base, User, WeatherReport, City
+from .models import Base, User, WeatherReport, City, Billing
 
 from settings import database_config
 
@@ -126,3 +126,53 @@ def new_city_add(city):
         new_city = City(city_name=city)
         session.add(new_city)
         session.commit()
+
+# Пополнение счета
+def bill_charge(user_id, balance):
+    session = Session()
+    try:
+        new_transaction = Billing(user_id=user_id, date=func.current_timestamp(), balance=balance)
+        session.add(new_transaction)
+        session.commit()
+        return f"Баланс пополнен на {balance} единиц"
+    except Exception as e:
+        session.rollback()
+        return "Ошибка пополнения баланса"
+    finally:
+        session.close()
+# Списание со счета
+def bill_use(u_id):
+    session = Session()
+    try:
+        current_balance = session.query(func.sum(Billing.balance)).filter(Billing.user_id == u_id).scalar() or 0
+
+        if current_balance > 0:
+            new_transaction = Billing(user_id=u_id, date=func.current_timestamp(), balance=-1)
+            session.add(new_transaction)
+            session.commit()
+    except Exception as e:
+        session.rollback()
+    finally:
+        session.close()
+# Запрос баланса
+def get_current_balance(u_id):
+    session = Session()
+    try:
+        current_balance = session.query(func.sum(Billing.balance)).filter(Billing.user_id == u_id).scalar() or 0
+        return current_balance
+    except Exception as e:
+        return 0
+    finally:
+        session.close()
+
+def get_user_id(telegram_id):
+    session = Session()
+    try:
+        user_id = session.query(User.id).filter(User.tg_id == telegram_id).scalar()
+        return user_id if user_id else 0
+    except Exception as e:
+        return 0
+    finally:
+        session.close()
+
+

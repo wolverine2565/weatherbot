@@ -45,3 +45,14 @@ class City(Base):
 
     def __repr__(self):
         return self.city_name
+
+
+class Billing(Base):
+    __tablename__ = 'Billing'
+    id = Column(Integer, primary_key=True)
+    date = Column(DateTime, default=datetime.now, nullable=False)
+    user_id = Column(Integer, ForeignKey('Users.id'), nullable=False)
+    balance = Column(Integer, nullable=False)
+
+    def __repr__(self):
+        return self.balance
