@@ -25,11 +25,9 @@ class SetUserCity(StatesGroup):
 class ChoiceSumm(StatesGroup):
     waiting_summ = State()
 
-class ChoiceParameterName(StatesGroup):
-    waiting_p_name = State()
 
-class ChoiceParameterValue(StatesGroup):
-    waiting_p_value = State()
+class ChoiceParameter(StatesGroup):
+    waiting_padameter_data = State()
 
 @dp.message_handler(commands=['start'])
 async def start_message(message: types.Message):
@@ -501,18 +499,30 @@ async def city_start(message: types.Message):
 
 @dp.message_handler(regexp='Добавить новый параметр')
 async def add_parameter(message: types.Message, state: FSMContext):
-
     await message.answer("Введите название и значение параметра через запятую:")
-    async def wait_for_p_value(message: types.Message):
-        user_id = orm.get_user_id(message.from_user.id)
-        config = message.text.split()
-        p_name = config[0]
-        p_value = config[1]
-        # Можно добавить проверки или обработку p_value здесь
-        await state.finish()  # Завершаем состояние FSM
-        orm.add_config (user_id, p_name, p_value)
-    # Ожидаем ответ пользователя для p_value
-    dp.register_message_handler(wait_for_p_value, state=ChoiceParameterName.waiting_p_value)
+    await ChoiceParameter.waiting_padameter_data.set()
+
+
+@dp.message_handler(state=ChoiceParameter.waiting_padameter_data)
+async def user_city_chosen(message: types.Message, state: FSMContext):
+    if message.text == 'Меню' or message.text == '📋 Меню':
+        await start_message(message)
+        await state.reset_state()
+        #выход без сохранения
+    else:
+        userid = orm.get_user_id(message.from_user.id)
+        data = message.text.split(',')
+        markup = await main_menu()
+        p_name = data[0]
+        p_value = data [1]
+        orm.add_config(userid, p_name, p_value)
+        text = f'Параметр {data[0]} успешно добавлен'
+        await message.answer(text, reply_markup=markup)
+        await state.finish()
+
+
+
+
 
 async def main_menu():
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2)
