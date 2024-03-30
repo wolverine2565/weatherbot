@@ -66,4 +66,4 @@ class Config(Base):
     value = Column(String, nullable=False)
 
     def __repr__(self):
-        return self.value
+        return self.all

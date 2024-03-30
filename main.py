@@ -1,8 +1,10 @@
 import json
 import requests
+from sqlalchemy.orm import sessionmaker
 
-from database.models import User, WeatherReport, City
-from database.orm import Session
+from database import orm
+from database.models import User, WeatherReport, City, Config
+from database.orm import Session, engine
 from settings import api_config
 
 
@@ -77,9 +79,28 @@ def get_popular_city():
         return city_name
     else:
         return
-
 # Close the session
         session.close()
 
-get_popular_city()
+# get_popular_city()
 
+def get_all_configs():
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        configs = session.query(Config).limit(50).all()
+        return configs
+    except Exception as e:
+        return f"Ошибка при получении данных из таблицы Config: {str(e)}"
+
+
+# Пример использования функции
+
+# value_to_check = '521809355'
+# result = orm.check_value('tg_bot_admin', '521809355')
+# if result:
+#     print(f"Значение найдено ")
+# else:
+#     print(f"Значение не найдено")
+
+print (orm.select_config_value_by_name('weather_key'))

@@ -36,14 +36,6 @@ else
         echo "A virtual environment activation error"
 fi
 
-FILE_PATH="/home/admin/weatherbot/settings/api_config.py"
-
-echo -e "geo_key = '70f1d6f9-c4de-4f27-a2c2-527491a25518'\n\nweather_key = {'X-Yandex-API-Key': '419cfa2c-c518-4fc1-b9f5-2d99548dcac6'}" > $FILE_PATH
-if [ $? -eq 0 ]; then
-        echo "api_config.py created"
-else
-        echo "api_config.py creation error"
-fi
 
 FILE_PATH="/home/admin/weatherbot/settings/database_config.py"
 
