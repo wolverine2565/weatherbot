@@ -25,6 +25,11 @@ class SetUserCity(StatesGroup):
 class ChoiceSumm(StatesGroup):
     waiting_summ = State()
 
+class DeleteParameter(StatesGroup):
+    waiting_padameter_number = State()
+
+
+
 
 class ChoiceParameter(StatesGroup):
     waiting_padameter_data = State()
@@ -303,7 +308,7 @@ async def callback_query(call, state: FSMContext):
 
 @dp.message_handler(lambda message: (message.text == 'Администратор' or message.text == '⚙️ Админ-панель'))
 async def admin_panel(message: types.Message):
-    if message.from_user.id in bot_config.tg_bot_admin:
+    if message.from_user.id in bot_config.tg_bot_admin or orm.check_value('tg_bot_admin', f'{message.from_user.id}') == True or orm.check_value('tg_bot_admin', f'{message.from_user.username}') == True:
         markup = types.reply_keyboard.ReplyKeyboardMarkup(resize_keyboard=True)
         btn1 = types.KeyboardButton('📑 Список пользователей')
         btn2 = types.KeyboardButton('🗓 Версия программы')
@@ -318,7 +323,8 @@ async def admin_panel(message: types.Message):
         btn1 = types.KeyboardButton('Меню')
         await message.answer(text, reply_markup=markup)
 
-@dp.message_handler(lambda message: message.from_user.id in bot_config.tg_bot_admin and message.text == '📑 Список пользователей')
+# @dp.message_handler(lambda message: message.from_user.id in bot_config.tg_bot_admin and message.text == '📑 Список пользователей')
+@dp.message_handler(lambda message: (message.from_user.id in bot_config.tg_bot_admin or orm.check_value('tg_bot_admin', f'{message.from_user.id}') == True or orm.check_value('tg_bot_admin', f'{message.from_user.username}') == True) and message.text == '📑 Список пользователей')
 async def get_all_users(message: types.Message):
     current_page = 1
     users = orm.get_all_users()
@@ -495,25 +501,35 @@ async def city_start(message: types.Message):
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     btn1 = types.KeyboardButton('📋 Меню')
     btn2 = types.KeyboardButton('🔧 Добавить новый параметр')
-    markup.add(btn1, btn2)
-    text = 'Системные параметры'
+    btn3 = types.KeyboardButton('❌ Удалить параметр')
+    markup.add(btn1, btn2, btn3)
+    text = 'Системные параметры\n'
+    all_configs = orm.get_all_configs()
+    for config in all_configs[:50]:  # Ограничиваем вывод первыми 50 записями
+        text += (
+            f"Номер: {config.id}\n"
+            f"Дата: {config.date.day}.{config.date.month}.{config.date.year}\n"
+            f"Добавлен пользователем: {orm.get_username(config.createby)}\n"
+            f"Название: {config.name}\n"
+            f"Значение: {config.value}\n\n"
+        )
     await message.answer(text, reply_markup=markup)
 
 @dp.message_handler(regexp='Добавить новый параметр')
 async def add_parameter(message: types.Message, state: FSMContext):
-    await message.answer("Введите название и значение параметра через запятую:")
+    await message.answer("Введите название и значение параметра через пробел:")
     await ChoiceParameter.waiting_padameter_data.set()
 
 
 @dp.message_handler(state=ChoiceParameter.waiting_padameter_data)
-async def user_city_chosen(message: types.Message, state: FSMContext):
+async def parameter_chosen(message: types.Message, state: FSMContext):
     if message.text == 'Меню' or message.text == '📋 Меню':
         await start_message(message)
         await state.reset_state()
         #выход без сохранения
     else:
         userid = orm.get_user_id(message.from_user.id)
-        data = message.text.split(',')
+        data = message.text.split()
         markup = await main_menu()
         p_name = data[0]
         p_value = data [1]
@@ -522,9 +538,28 @@ async def user_city_chosen(message: types.Message, state: FSMContext):
         await message.answer(text, reply_markup=markup)
         await state.finish()
 
+@dp.message_handler(regexp='Удалить параметр')
+async def del_parameter(message: types.Message, state: FSMContext):
+    await message.answer("Введите номер параметра:")
+    await DeleteParameter.waiting_padameter_number.set()
 
-
-
+@dp.message_handler(state=DeleteParameter.waiting_padameter_number)
+async def parameter_del_chosen(message: types.Message, state: FSMContext):
+    markup = await main_menu()
+    if message.text == 'Меню' or message.text == '📋 Меню':
+        await start_message(message)
+        await state.reset_state()
+        #выход без сохранения
+    else:
+        if message.text.isdigit():
+            if orm.check_parameter_number(message.text) == True:
+                orm.del_config(message.text)
+                await message.answer(f'Параметр номер {message.text} удален')
+                await state.reset_state()
+            else: await message.answer(f'Параметр c номером {message.text} не найден')
+        else:
+            await message.answer(f'Введите число')
+            await state.reset_state()
 
 async def main_menu():
     markup = types.reply_keyboard.ReplyKeyboardMarkup(row_width=2)

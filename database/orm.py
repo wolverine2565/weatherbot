@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import create_engine, func
+from requests import delete
+from sqlalchemy import create_engine, func, text
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import sessionmaker
 from .models import Base, User, WeatherReport, City, Billing, Config
@@ -11,6 +12,7 @@ engine = create_engine(database_config.url, echo=True)
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 
+
 # регистрация по кнопке /start
 def add_user(tg_id, username, full_name):
     session = Session()
@@ -19,6 +21,7 @@ def add_user(tg_id, username, full_name):
         new_user = User(tg_id=tg_id, username=username, full_name=full_name)
         session.add(new_user)
         session.commit()
+
 
 # установить город проживания
 def set_user_city(tg_id, city_name):
@@ -37,6 +40,7 @@ def set_user_city(tg_id, city_name):
         print(f"User with tg_id: {tg_id} not found.")
     session.close()
 
+
 # создание прогноза
 def create_report(tg_id, temp, feels_like, wind_speed, pressure_mm, city):
     session = Session()
@@ -49,16 +53,18 @@ def create_report(tg_id, temp, feels_like, wind_speed, pressure_mm, city):
         session.flush()
         session.refresh(new_city)
     else:
-        new_city = existing_city # Добавлена проверка существующей записи в таблице city
-    new_report = WeatherReport(temp=temp, feels_like=feels_like, wind_speed=wind_speed, pressure_mm=pressure_mm, city_id=new_city.id, owner=user.id)
+        new_city = existing_city  # Добавлена проверка существующей записи в таблице city
+    new_report = WeatherReport(temp=temp, feels_like=feels_like, wind_speed=wind_speed, pressure_mm=pressure_mm,
+                               city_id=new_city.id, owner=user.id)
     session.add(new_report)
     session.commit()
+
 
 # город проживания
 def get_user_city(tg_id):
     session = Session()
-#     user = session.query(User).filter(User.tg_id == tg_id).first()
-#     return user.city
+    #     user = session.query(User).filter(User.tg_id == tg_id).first()
+    #     return user.city
     user = session.query(User).filter(User.tg_id == tg_id).first()
     if user:
         city = user.city.city_name if user.city else None
@@ -77,6 +83,7 @@ def get_reports(tg_id):
     reports = user.reports
     return reports
 
+
 # удаление запроса
 def delete_user_report(report_id):
     session = Session()
@@ -84,16 +91,21 @@ def delete_user_report(report_id):
     session.delete(report)
     session.commit()
 
+
 # список зарегистрированных пользователей
 def get_all_users():
     session = Session()
     users = session.query(User).all()
     return users
+
+
 # количество запросов по максимальному id
 def get_max_report():
     session = Session()
     max_id = session.query(func.max(WeatherReport.id)).scalar()
     return max_id
+
+
 # самый популярный город в запросах
 def get_popular_city():
     session = Session()
@@ -118,6 +130,7 @@ def get_popular_city():
         return
         session.close()
 
+
 # Добавление нового города в таблицу city
 def new_city_add(city):
     session = Session()
@@ -128,6 +141,7 @@ def new_city_add(city):
         new_city = City(city_name=city)
         session.add(new_city)
         session.commit()
+
 
 # Пополнение счета
 def bill_charge(user_id, balance):
@@ -142,6 +156,8 @@ def bill_charge(user_id, balance):
         return "Ошибка пополнения баланса"
     finally:
         session.close()
+
+
 # Списание со счета
 def bill_use(u_id):
     session = Session()
@@ -156,6 +172,8 @@ def bill_use(u_id):
         session.rollback()
     finally:
         session.close()
+
+
 # Запрос баланса
 def get_current_balance(u_id):
     session = Session()
@@ -167,6 +185,7 @@ def get_current_balance(u_id):
     finally:
         session.close()
 
+
 def get_user_id(telegram_id):
     session = Session()
     try:
@@ -176,6 +195,28 @@ def get_user_id(telegram_id):
         return 0
     finally:
         session.close()
+
+
+def get_user_tg_id(id):
+    session = Session()
+    try:
+        user_id = session.query(User.tg_id).filter(User.id == id).scalar()
+        return user_id if user_id else 0
+    except Exception as e:
+        return 0
+    finally:
+        session.close()
+
+def get_username(id):
+    session = Session()
+    try:
+        user_name = session.query(User.username).filter(User.id == id).scalar()
+        return user_name if user_name else 0
+    except Exception as e:
+        return 0
+    finally:
+        session.close()
+
 
 def add_config(user_id, p_name, p_value):
     session = Session()
@@ -188,4 +229,43 @@ def add_config(user_id, p_name, p_value):
     finally:
         session.close()
 
+def del_config(id):
+    session = Session()
+    parameter = session.get(Config, id)
+    session.delete(parameter)
+    session.commit()
+
+def get_all_configs():
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        configs = session.query(Config).limit(50).all()
+        return configs
+    except Exception as e:
+        return f"Ошибка при получении данных из таблицы Config: {str(e)}"
+
+
+def check_value(name, value):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        result = session.query(Config).filter(Config.name == name, Config.value == value).first()
+        if result:
+            return True
+        else:
+            return False
+    except Exception:
+        return False
+
+def check_parameter_number(id):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        result = session.query(Config).filter(Config.id == id).first()
+        if result:
+            return True
+        else:
+            return False
+    except Exception:
+        return False
 
