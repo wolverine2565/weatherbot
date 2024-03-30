@@ -103,4 +103,4 @@ def get_all_configs():
 # else:
 #     print(f"Значение не найдено")
 
-print (orm.check_parameter_number('8'))
+print (orm.select_config_value_by_name('weather_key'))

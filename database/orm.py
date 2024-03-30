@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from requests import delete
-from sqlalchemy import create_engine, func, text
+from sqlalchemy import create_engine, func, text, MetaData
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import sessionmaker
 from .models import Base, User, WeatherReport, City, Billing, Config
@@ -242,7 +242,7 @@ def get_all_configs():
         configs = session.query(Config).limit(50).all()
         return configs
     except Exception as e:
-        return f"Ошибка при получении данных из таблицы Config: {str(e)}"
+        return
 
 
 def check_value(name, value):
@@ -269,3 +269,15 @@ def check_parameter_number(id):
     except Exception:
         return False
 
+
+def select_config_value_by_name(name):
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        result = session.query(Config).filter(Config.name == name).first()
+        if result:
+            return result.value
+        else:
+            return None
+    except Exception as e:
+        return None

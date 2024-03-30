@@ -420,7 +420,10 @@ async def get_version(message: types.Message):
     btn1 = types.KeyboardButton('📋 Меню')
     btn2 = types.KeyboardButton('⚙️ Админ-панель')
     markup.add(btn1, btn2)
-    text =  f'Версия 1.24:' \
+    text =  f'Версия 1,25:' \
+            f'\n- Добавлена возможность назначать администраторов в разделе "Настройки"' \
+            f'\n- Добавлена возможнось самостоятельно добавлять API-ключи' \
+            f'\nВерсия 1.24:' \
             f'\n - Добавлена возможность пополнения баланса в настройках' \
             f'\nВерсия 1.23:' \
             f'\n - Добавлены иконки в меню' \
@@ -517,7 +520,8 @@ async def city_start(message: types.Message):
 
 @dp.message_handler(regexp='Добавить новый параметр')
 async def add_parameter(message: types.Message, state: FSMContext):
-    await message.answer("Введите название и значение параметра через пробел:")
+    await message.answer("Введите название и значение параметра через запятую и пробел\n"
+                         "(Например: название_параметра, значение параметра)")
     await ChoiceParameter.waiting_padameter_data.set()
 
 
@@ -529,7 +533,7 @@ async def parameter_chosen(message: types.Message, state: FSMContext):
         #выход без сохранения
     else:
         userid = orm.get_user_id(message.from_user.id)
-        data = message.text.split()
+        data = message.text.split(', ')
         markup = await main_menu()
         p_name = data[0]
         p_value = data [1]
